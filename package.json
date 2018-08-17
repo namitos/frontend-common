@@ -1,0 +1,26 @@
+{
+  "name": "model-components",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/namitos/model-components.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/namitos/model-components/issues"
+  },
+  "homepage": "https://github.com/namitos/model-components#readme",
+  "devDependencies": {
+    "polymer-cli": "^1.8.0",
+    "polyserve": "^0.27.12"
+  },
+  "dependencies": {
+    "pwa-helpers": "^0.8.3"
+  }
+}
