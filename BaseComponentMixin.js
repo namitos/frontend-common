@@ -1,9 +1,11 @@
-import { html, render } from '../lit-html/lib/lit-extended.js';
-
 export function BaseComponentMixin(base = class {}) {
   return class BaseComponentMixin extends base {
-    get is() {
+    static get is() {
       return 'div';
+    }
+
+    static get properties() {
+      return {}
     }
 
     get _isWebcomponent() {
@@ -14,36 +16,26 @@ export function BaseComponentMixin(base = class {}) {
       return this._isWebcomponent ? this : this.el;
     }
 
-    render() {
-      if (this._isWebcomponent) {
-        render(this.template(), this.shadowRoot);
-      } else {
-        if (!this.el) {
-          this.el = Object.assign(document.createElement(this.is), { i: this });
-        }
-        render(this.template(), this.el);
-        //console.log('render', this);
-      }
-      return this.el;
+    get _content() {
+      return this._isWebcomponent ? this.shadowRoot : this.el;
     }
 
     template() {
       throw new Error('no template instance');
     }
 
-
-    get properties() {
-      return {}
-    }
-
-    constructor(properties = {}) {
+    constructor(args = {}) {
       super();
+      let { is, properties } = this.constructor;
+
       if (this._isWebcomponent) {
         this.attachShadow({ mode: 'open' });
+      } else {
+        this.el = Object.assign(document.createElement(is), { i: this });
       }
       this._watchingProperties = {};
-      Object.keys(this.properties).forEach((propName) => {
-        let prop = this.properties[propName];
+      Object.keys(properties).forEach((propName) => {
+        let prop = properties[propName];
         //console.log(`set property ${propName}`);
         Object.defineProperty(this, propName, {
           get() {
@@ -59,17 +51,18 @@ export function BaseComponentMixin(base = class {}) {
                 this._wrapper.removeAttribute(propName);
               }
             }
-            if (this._wrapper.parentNode) { //пока не приаттачено в дом, незачем перерендеривать на каждое изменение проперти
+            if (this._wrapper.parentNode) {
               this.render();
             }
           }
         });
       });
-      Object.assign(this, properties);
+      Object.assign(this, args);
       this.render();
-      if (properties.id) {
-        this._wrapper.setAttribute('id', properties.id);
+      if (args.id) {
+        this._wrapper.setAttribute('id', args.id);
       }
+      console.log(`constructor of ${is}`, this.el);
     }
   }
 }
