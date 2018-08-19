@@ -62,7 +62,7 @@ export function BaseComponentMixin(base = class {}) {
       if (args.id) {
         this._wrapper.setAttribute('id', args.id);
       }
-      console.log(`constructor of ${is}`, this.el);
+      //console.log(`constructor of ${is}`, this.el);
     }
   }
 }
