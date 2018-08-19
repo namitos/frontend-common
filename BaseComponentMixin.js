@@ -56,6 +56,9 @@ export function BaseComponentMixin(base = class {}) {
             }
           }
         });
+        if (prop.value) {
+          args[propName] = prop.value instanceof Function ? prop.value() : prop.value
+        }
       });
       Object.assign(this, args);
       this.render();
