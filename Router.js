@@ -1,4 +1,4 @@
-import { installRouter } from '../node_modules/pwa-helpers/router.js';
+import { installRouter } from '../pwa-helpers/router.js';
 
 let PATH_REGEXP = new RegExp([
   '(\\\\.)',
