@@ -51,7 +51,14 @@ export function BaseComponentMixin(base = class {}) {
                 this._wrapper.removeAttribute(propName);
               }
             }
-            if (this._wrapper.parentNode) {
+            if (prop.observer) {
+              if (prop.observer instanceof Function) {
+                prop.observer.call(this);
+              } else {
+                this[prop.observer]();
+              }
+            }
+            if (!prop.noRender && this._wrapper.parentNode) {
               this.render();
             }
           }
