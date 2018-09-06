@@ -63,7 +63,7 @@ export function BaseComponentMixin(base = class {}) {
             }
           }
         });
-        if (prop.value) {
+        if (prop.value && !args[propName]) {
           args[propName] = prop.value instanceof Function ? prop.value() : prop.value
         }
       });
