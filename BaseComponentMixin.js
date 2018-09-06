@@ -34,15 +34,18 @@ export function BaseComponentMixin(base = class {}) {
         this.el = Object.assign(document.createElement(is), { i: this });
       }
       this._watchingProperties = {};
+
       Object.keys(properties).forEach((propName) => {
         let prop = properties[propName];
-        //console.log(`set property ${propName}`);
+        if (prop.value && !args.hasOwnProperty(propName)) {
+          args[propName] = prop.value instanceof Function ? prop.value() : prop.value;
+        }
+
         Object.defineProperty(this, propName, {
           get() {
             return this._watchingProperties[propName];
           },
           set(v) {
-            //console.log(`set ${propName}: ${v}`, this._wrapper.parentNode);
             this._watchingProperties[propName] = v;
             if (prop.reflectToAttribute) {
               if (v) {
@@ -63,11 +66,12 @@ export function BaseComponentMixin(base = class {}) {
             }
           }
         });
-        if (prop.value && !args[propName]) {
-          args[propName] = prop.value instanceof Function ? prop.value() : prop.value
+      });
+      Object.keys(args).forEach((k) => { //to avoid race between setter fn and default values fn
+        if (!this[k]) {
+          this[k] = args[k];
         }
       });
-      Object.assign(this, args);
       this.render();
       if (args.id) {
         this._wrapper.setAttribute('id', args.id);
