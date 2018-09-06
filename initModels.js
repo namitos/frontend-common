@@ -1,167 +1,78 @@
-import { HttpTransport } from './HttpTransport.js';
-import { ArrayMixin } from './ArrayMixin.js';
-
-export function initModels({ models = {}, schemas, apiHost }) {
-  if (!schemas) {
-    throw { name: 'InitModelsError', text: 'schemas is required' };
-  }
-
-  let crud = new HttpTransport(`${apiHost || ''}/api/crud`);
-
-  class Collection extends ArrayMixin(Array) {}
-
-  class _Model {
-    constructor(properties = {}, options) {
-      Object.assign(this, properties);
-      if (options) {
-        Object.keys(options).forEach((prop) => {
-          Object.defineProperty(this, prop, {
-            value: options[prop]
-          });
-        });
-      }
-
-      if (this.constructor.schema.sendOnlyUpdates) {
-        let value = Object.assign({}, this);
-        Object.keys(value).forEach((prop) => {
-          if (value[prop] instanceof Object) {
-            value[prop] = JSON.stringify(value[prop]);
-          }
-        })
-        Object.defineProperty(this, '_initial', { value })
-      }
+export function BaseComponentMixin(base = class {}) {
+  return class BaseComponentMixin extends base {
+    static get is() {
+      return 'div';
     }
 
-    toJSON() {
-      let result = { _id: this._id };
-      if (this.constructor.schema.sendOnlyUpdates) {
-        Object.keys(this).forEach((prop) => {
-          if (this[prop] instanceof Object) {
-            if (JSON.stringify(this[prop]) !== this._initial[prop]) {
-              result[prop] = this[prop];
+    static get properties() {
+      return {}
+    }
+
+    get _isWebcomponent() {
+      return this instanceof HTMLElement;
+    }
+
+    get _wrapper() {
+      return this._isWebcomponent ? this : this.el;
+    }
+
+    get _content() {
+      return this._isWebcomponent ? this.shadowRoot : this.el;
+    }
+
+    template() {
+      throw new Error('no template instance');
+    }
+
+    constructor(args = {}) {
+      super();
+      let { is, properties } = this.constructor;
+
+      if (this._isWebcomponent) {
+        this.attachShadow({ mode: 'open' });
+      } else {
+        this.el = Object.assign(document.createElement(is), { i: this });
+      }
+      this._watchingProperties = {};
+      Object.keys(properties).forEach((propName) => {
+        let prop = properties[propName];
+        //console.log(`set property ${propName}`);
+        Object.defineProperty(this, propName, {
+          get() {
+            return this._watchingProperties[propName];
+          },
+          set(v) {
+            //console.log(`set ${propName}: ${v}`, this._wrapper.parentNode);
+            this._watchingProperties[propName] = v;
+            if (prop.reflectToAttribute) {
+              if (v) {
+                this._wrapper.setAttribute(propName, v);
+              } else {
+                this._wrapper.removeAttribute(propName);
+              }
             }
-          } else {
-            if (this[prop] !== this._initial[prop]) {
-              result[prop] = this[prop];
+            if (prop.observer) {
+              if (prop.observer instanceof Function) {
+                prop.observer.call(this);
+              } else {
+                this[prop.observer]();
+              }
+            }
+            if (!prop.noRender && this._wrapper.parentNode) {
+              this.render();
             }
           }
         });
-      } else {
-        result = Object.assign(result, this);
-      }
-      return result;
-    }
-
-    /**
-     * safe deep get
-     * @param {Array} path 
-     */
-    get(path) {
-      if (typeof path === 'string') {
-        path = path.split('.');
-      }
-      return path.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, this)
-    }
-
-    static get schema() {}
-  }
-
-  models.Model = models.Model || class Model extends _Model {
-    async save() {
-      let r;
-      if (this._id) {
-        r = await crud.u(`${this.constructor.schema.name}`, this);
-      } else {
-        r = await crud.c(`${this.constructor.schema.name}`, this);
-      }
-      Object.assign(this, r);
-      return this;
-    }
-
-    async 'delete'() {
-      return crud.d(`${this.constructor.schema.name}/${this._id}`);
-    }
-
-    static async read(where = {}, options) {
-      if (this.schema.safeDelete && !where.hasOwnProperty('deleted')) {
-        where.deleted = {
-          $ne: true
-        };
-      }
-      let items = await crud.r(`${this.schema.name}`, { where, options });
-      for (let i = 0; i < items.length; ++i) {
-        items[i] = new this(items[i]);
-      }
-      return items;
-    }
-
-    static async count(where = {}) {
-      let r = await crud.r(`${this.schema.name}`, { where, count: true });
-      return r.itemsCount;
-    }
-  };
-
-  models.Tree = models.Tree || class Tree extends models.Model {
-    static async breadcrumb(id) {
-      if (!id) { return [] }
-      let items = await crud.r(`${this.schema.name}/breadcrumb/${id}`);
-      for (let i = 0; i < items.length; ++i) {
-        items[i] = new this(items[i]);
-      }
-      return items;
-    }
-  };
-
-
-  models.User = models.User || class User extends models.Model {
-    static get schema() {
-      return schemas.User;
-    }
-    permission(permissionString) {
-      return this.permissions.includes(permissionString) || this.permissions.includes('full access');
-    }
-  };
-
-  models.Schema = models.Schema || class Schema {
-    constructor(schema = {}) {
-      Object.assign(this, schema);
-    }
-
-    forEach(fn, schema) {
-      schema = schema || this;
-      fn(schema);
-      if (schema.type === 'object') {
-        Object.keys(schema.properties).forEach((key) => {
-          this.forEach(fn, schema.properties[key]);
-        });
-      } else if (schema.type === 'array') {
-        this.forEach(fn, schema.items);
-      }
-    }
-
-    getField(path) {
-      const arr = path.split('.').reduce((prev, cur) => prev.concat(['properties', cur]), []);
-      return arr.reduce((prev, cur) => prev ? prev[cur] : null, this);
-    }
-  }
-
-  for (let key in schemas) {
-    if (!models[key]) {
-      if (schemas[key].tree) {
-        models[key] = class extends models.Tree {
-          static get schema() {
-            return schemas[key];
-          }
+        if (prop.value && !args[propName]) {
+          args[propName] = prop.value instanceof Function ? prop.value() : prop.value
         }
-      } else {
-        models[key] = class extends models.Model {
-          static get schema() {
-            return schemas[key];
-          }
-        }
+      });
+      Object.assign(this, args);
+      this.render();
+      if (args.id) {
+        this._wrapper.setAttribute('id', args.id);
       }
+      //console.log(`constructor of ${is}`, this.el);
     }
   }
-
-  return models;
 }
