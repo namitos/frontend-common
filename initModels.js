@@ -52,6 +52,17 @@ export function initModels({ models = {}, schemas, apiHost }) {
       return result;
     }
 
+    /**
+     * safe deep get
+     * @param {Array} path 
+     */
+    get(path) {
+      if (typeof path === 'string') {
+        path = path.split('.');
+      }
+      return path.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, this)
+    }
+
     static get schema() {}
   }
 
@@ -67,7 +78,7 @@ export function initModels({ models = {}, schemas, apiHost }) {
       return this;
     }
 
-    async 'delete' () {
+    async 'delete'() {
       return crud.d(`${this.constructor.schema.name}/${this._id}`);
     }
 
