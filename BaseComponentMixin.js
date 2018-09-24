@@ -37,7 +37,7 @@ export function BaseComponentMixin(base = class {}) {
 
       Object.keys(properties).forEach((propName) => {
         let prop = properties[propName];
-        if (prop.value && !args.hasOwnProperty(propName)) {
+        if (prop.hasOwnProperty('value') && !args.hasOwnProperty(propName)) {
           args[propName] = prop.value instanceof Function ? prop.value() : prop.value;
         }
 
@@ -46,23 +46,33 @@ export function BaseComponentMixin(base = class {}) {
             return this._watchingProperties[propName];
           },
           set(v) {
-            this._watchingProperties[propName] = v;
-            if (prop.reflectToAttribute) {
-              if (v) {
-                this._wrapper.setAttribute(propName, v);
-              } else {
-                this._wrapper.removeAttribute(propName);
+            if (this._watchingProperties[propName] !== v) {
+              this._watchingProperties[propName] = v;
+              if (prop.reflectToAttribute) {
+                if (v) {
+                  this._wrapper.setAttribute(propName, v);
+                } else {
+                  this._wrapper.removeAttribute(propName);
+                }
               }
-            }
-            if (prop.observer) {
-              if (prop.observer instanceof Function) {
-                prop.observer.call(this);
-              } else {
-                this[prop.observer]();
+              if (prop.observer) {
+                if (prop.observer instanceof Function) {
+                  prop.observer.call(this);
+                } else {
+                  this[prop.observer]();
+                }
               }
-            }
-            if (!prop.noRender && this._wrapper.parentNode) {
-              this.render();
+              if (!prop.noRender && this._wrapper.parentNode) {
+                this.render();
+              }
+              if (prop.notify) {
+                if (window.CustomEvent) {
+                  this.fire(`${propName}-changed`, v);
+                }
+                if (this[`${propName}Changed`]) {
+                  this[`${propName}Changed`](v);
+                }
+              }
             }
           }
         });
@@ -77,6 +87,14 @@ export function BaseComponentMixin(base = class {}) {
         this._wrapper.setAttribute('id', args.id);
       }
       //console.log(`constructor of ${is}`, this.el);
+    }
+
+    fire(type, detail) {
+      this._wrapper.dispatchEvent(new CustomEvent(type, {
+        bubbles: true,
+        composed: true,
+        detail
+      }))
     }
   }
 }
