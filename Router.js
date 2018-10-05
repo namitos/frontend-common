@@ -1,12 +1,9 @@
 import { installRouter } from '../pwa-helpers/router.js';
 
-let PATH_REGEXP = new RegExp([
-  '(\\\\.)',
-  '([\\/.])?(?:(?:\\:(\\w+)(?:\\(((?:\\\\.|[^()])+)\\))?|\\(((?:\\\\.|[^()])+)\\))([+*?])?|(\\*))'
-].join('|'), 'g');
+let PATH_REGEXP = new RegExp(['(\\\\.)', '([\\/.])?(?:(?:\\:(\\w+)(?:\\(((?:\\\\.|[^()])+)\\))?|\\(((?:\\\\.|[^()])+)\\))([+*?])?|(\\*))'].join('|'), 'g');
 
 function escapeString(str) {
-  return str.replace(/([.+*?=^!:${}()[\]|\/])/g, '\\$1')
+  return str.replace(/([.+*?=^!:${}()[\]|/])/g, '\\$1');
 }
 
 function parse(str) {
@@ -23,7 +20,7 @@ function parse(str) {
     index = offset + m.length;
     if (escaped) {
       path += escaped[1];
-      continue
+      continue;
     }
     if (path) {
       tokens.push(path);
@@ -46,23 +43,23 @@ function parse(str) {
       optional: optional,
       repeat: repeat,
       pattern: escapeGroup(pattern)
-    })
+    });
   }
   if (index < str.length) {
-    path += str.substr(index)
+    path += str.substr(index);
   }
   if (path) {
-    tokens.push(path)
+    tokens.push(path);
   }
-  return tokens
+  return tokens;
 }
 
 function flags(options) {
-  return options.sensitive ? '' : 'i'
+  return options.sensitive ? '' : 'i';
 }
 
 function escapeGroup(group) {
-  return group.replace(/([=!:$\/()])/g, '\\$1')
+  return group.replace(/([=!:$/()])/g, '\\$1');
 }
 
 function tokensToRegExp(tokens, options) {
@@ -75,34 +72,34 @@ function tokensToRegExp(tokens, options) {
   for (let i = 0; i < tokens.length; i++) {
     let token = tokens[i];
     if (typeof token === 'string') {
-      route += escapeString(token)
+      route += escapeString(token);
     } else {
       let prefix = escapeString(token.prefix);
       let capture = token.pattern;
       if (token.repeat) {
-        capture += '(?:' + prefix + capture + ')*'
+        capture += '(?:' + prefix + capture + ')*';
       }
       if (token.optional) {
         if (prefix) {
-          capture = '(?:' + prefix + '(' + capture + '))?'
+          capture = '(?:' + prefix + '(' + capture + '))?';
         } else {
-          capture = '(' + capture + ')?'
+          capture = '(' + capture + ')?';
         }
       } else {
-        capture = prefix + '(' + capture + ')'
+        capture = prefix + '(' + capture + ')';
       }
-      route += capture
+      route += capture;
     }
   }
   if (!strict) {
-    route = (endsWithSlash ? route.slice(0, -2) : route) + '(?:\\/(?=$))?'
+    route = (endsWithSlash ? route.slice(0, -2) : route) + '(?:\\/(?=$))?';
   }
   if (end) {
-    route += '$'
+    route += '$';
   } else {
-    route += strict && endsWithSlash ? '' : '(?=\\/|$)'
+    route += strict && endsWithSlash ? '' : '(?=\\/|$)';
   }
-  return new RegExp('^' + route, flags(options))
+  return new RegExp('^' + route, flags(options));
 }
 
 function stringToRegexp(path, keys = [], options = {}) {
@@ -110,7 +107,7 @@ function stringToRegexp(path, keys = [], options = {}) {
   let re = tokensToRegExp(tokens, options);
   for (let i = 0; i < tokens.length; i++) {
     if (typeof tokens[i] !== 'string') {
-      keys.push(tokens[i])
+      keys.push(tokens[i]);
     }
   }
   re.keys = keys;
@@ -130,6 +127,7 @@ export class Router {
     });
   }
   page(pathname) {
+    document.documentElement ? (document.documentElement.scrollTop = 0) : (document.body.scrollTop = 0);
     //pathname = pathname ? pathname.substr(1) : "";
     let route = this.routes.find((route) => route.regexp.test(pathname));
     let regexp = route.regexp;
