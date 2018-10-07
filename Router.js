@@ -1,5 +1,3 @@
-import { installRouter } from '../pwa-helpers/router.js';
-
 let PATH_REGEXP = new RegExp(['(\\\\.)', '([\\/.])?(?:(?:\\:(\\w+)(?:\\(((?:\\\\.|[^()])+)\\))?|\\(((?:\\\\.|[^()])+)\\))([+*?])?|(\\*))'].join('|'), 'g');
 
 function escapeString(str) {
@@ -112,6 +110,55 @@ function stringToRegexp(path, keys = [], options = {}) {
   }
   re.keys = keys;
   return re;
+}
+
+function getParents(node, memo = []) {
+  let parentNode = node.parentNode;
+  if (!parentNode) {
+    return memo;
+  } else {
+    return getParents(parentNode, memo.concat([parentNode]));
+  }
+}
+
+function eventPath(e) {
+  let path = (e.composedPath && e.composedPath()) || e.path;
+  let target = e.target;
+
+  if (path != null) {
+    // Safari doesn't include Window, and it should.
+    path = path.indexOf(window) < 0 ? path.concat([window]) : path;
+    return path;
+  }
+
+  if (target === window) {
+    return [window];
+  }
+  return [target].concat(getParents(target)).concat([window]);
+}
+
+function installRouter(locationUpdatedCallback) {
+  document.body.addEventListener('click', (e) => {
+    try {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      const anchor = eventPath(e).filter((n) => n.tagName === 'A')[0];
+      if (!anchor || anchor.target || anchor.hasAttribute('download') || anchor.getAttribute('rel') === 'external') return;
+      const href = anchor.href;
+      if (!href || href.indexOf('mailto:') !== -1) return;
+      const location = window.location;
+      const origin = location.origin || location.protocol + '//' + location.host;
+      if (href.indexOf(origin) !== 0) return;
+      e.preventDefault();
+      if (href !== location.href) {
+        window.history.pushState({}, '', href);
+        locationUpdatedCallback(location, e);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  });
+  window.addEventListener('popstate', (e) => locationUpdatedCallback(window.location, e));
+  locationUpdatedCallback(window.location, null /* event */);
 }
 
 export class Router {
