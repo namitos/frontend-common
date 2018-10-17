@@ -27,8 +27,8 @@ export function initModels({ models = {}, schemas, apiHost }) {
           if (value[prop] instanceof Object) {
             value[prop] = JSON.stringify(value[prop]);
           }
-        })
-        Object.defineProperty(this, '_initial', { value })
+        });
+        Object.defineProperty(this, '_initial', { value });
       }
     }
 
@@ -54,96 +54,105 @@ export function initModels({ models = {}, schemas, apiHost }) {
 
     /**
      * safe deep get
-     * @param {Array} path 
+     * @param {Array} path
      */
     get(path) {
       if (typeof path === 'string') {
         path = path.split('.');
       }
-      return path.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, this)
+      return path.reduce((xs, x) => (xs && xs[x] ? xs[x] : null), this);
     }
 
     static get schema() {}
   }
 
-  models.Model = models.Model || class Model extends _Model {
-    async save() {
-      let r;
-      if (this._id) {
-        r = await crud.u(`${this.constructor.schema.name}`, this);
-      } else {
-        r = await crud.c(`${this.constructor.schema.name}`, this);
+  models.Model =
+    models.Model ||
+    class Model extends _Model {
+      async save() {
+        let r;
+        if (this._id) {
+          r = await crud.u(`${this.constructor.schema.name}`, this);
+        } else {
+          r = await crud.c(`${this.constructor.schema.name}`, this);
+        }
+        Object.assign(this, r);
+        return this;
       }
-      Object.assign(this, r);
-      return this;
-    }
 
-    async 'delete'() {
-      return crud.d(`${this.constructor.schema.name}/${this._id}`);
-    }
-
-    static async read(where = {}, options) {
-      if (this.schema.safeDelete && !where.hasOwnProperty('deleted')) {
-        where.deleted = {
-          $ne: true
-        };
+      async delete() {
+        return crud.d(`${this.constructor.schema.name}/${this._id}`);
       }
-      let items = await crud.r(`${this.schema.name}`, { where, options });
-      for (let i = 0; i < items.length; ++i) {
-        items[i] = new this(items[i]);
+
+      static async read(where = {}, options) {
+        if (this.schema.safeDelete && !where.hasOwnProperty('deleted')) {
+          where.deleted = {
+            $ne: true
+          };
+        }
+        let items = await crud.r(`${this.schema.name}`, { where, options });
+        for (let i = 0; i < items.length; ++i) {
+          items[i] = new this(items[i]);
+        }
+        return items;
       }
-      return items;
-    }
 
-    static async count(where = {}) {
-      let r = await crud.r(`${this.schema.name}`, { where, count: true });
-      return r.itemsCount;
-    }
-  };
-
-  models.Tree = models.Tree || class Tree extends models.Model {
-    static async breadcrumb(id) {
-      if (!id) { return [] }
-      let items = await crud.r(`${this.schema.name}/breadcrumb/${id}`);
-      for (let i = 0; i < items.length; ++i) {
-        items[i] = new this(items[i]);
+      static async count(where = {}) {
+        let r = await crud.r(`${this.schema.name}`, { where, count: true });
+        return r.itemsCount;
       }
-      return items;
-    }
-  };
+    };
 
-
-  models.User = models.User || class User extends models.Model {
-    static get schema() {
-      return schemas.User;
-    }
-    permission(permissionString) {
-      return this.permissions.includes(permissionString) || this.permissions.includes('full access');
-    }
-  };
-
-  models.Schema = models.Schema || class Schema {
-    constructor(schema = {}) {
-      Object.assign(this, schema);
-    }
-
-    forEach(fn, schema) {
-      schema = schema || this;
-      fn(schema);
-      if (schema.type === 'object') {
-        Object.keys(schema.properties).forEach((key) => {
-          this.forEach(fn, schema.properties[key]);
-        });
-      } else if (schema.type === 'array') {
-        this.forEach(fn, schema.items);
+  models.Tree =
+    models.Tree ||
+    class Tree extends models.Model {
+      static async breadcrumb(id) {
+        if (!id) {
+          return [];
+        }
+        let items = await crud.r(`${this.schema.name}/breadcrumb/${id}`);
+        for (let i = 0; i < items.length; ++i) {
+          items[i] = new this(items[i]);
+        }
+        return items;
       }
-    }
+    };
 
-    getField(path) {
-      const arr = path.split('.').reduce((prev, cur) => prev.concat(['properties', cur]), []);
-      return arr.reduce((prev, cur) => prev ? prev[cur] : null, this);
-    }
-  }
+  models.User =
+    models.User ||
+    class User extends models.Model {
+      static get schema() {
+        return schemas.User;
+      }
+      permission(permissionString) {
+        return this.permissions.includes(permissionString) || this.permissions.includes('full access');
+      }
+    };
+
+  models.Schema =
+    models.Schema ||
+    class Schema {
+      constructor(schema = {}) {
+        Object.assign(this, schema);
+      }
+
+      forEach(fn, schema) {
+        schema = schema || this;
+        fn(schema);
+        if (schema.type === 'object') {
+          Object.keys(schema.properties).forEach((key) => {
+            this.forEach(fn, schema.properties[key]);
+          });
+        } else if (schema.type === 'array') {
+          this.forEach(fn, schema.items);
+        }
+      }
+
+      getField(path) {
+        const arr = path.split('.').reduce((prev, cur) => prev.concat(['properties', cur]), []);
+        return arr.reduce((prev, cur) => (prev ? prev[cur] : null), this);
+      }
+    };
 
   for (let key in schemas) {
     if (!models[key]) {
@@ -152,13 +161,13 @@ export function initModels({ models = {}, schemas, apiHost }) {
           static get schema() {
             return schemas[key];
           }
-        }
+        };
       } else {
         models[key] = class extends models.Model {
           static get schema() {
             return schemas[key];
           }
-        }
+        };
       }
     }
   }

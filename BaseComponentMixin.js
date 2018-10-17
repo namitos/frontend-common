@@ -5,7 +5,7 @@ export function BaseComponentMixin(base = class {}) {
     }
 
     static get properties() {
-      return {}
+      return {};
     }
 
     get _isWebcomponent() {
@@ -67,7 +67,7 @@ export function BaseComponentMixin(base = class {}) {
               }
               if (prop.notify) {
                 if (window.CustomEvent) {
-                  this.fire(`${propName}-changed`, v);
+                  this.emit(`${propName}-changed`, v);
                 }
                 if (this[`${propName}Changed`]) {
                   this[`${propName}Changed`](v);
@@ -77,7 +77,8 @@ export function BaseComponentMixin(base = class {}) {
           }
         });
       });
-      Object.keys(args).forEach((k) => { //to avoid race between setter fn and default values fn
+      Object.keys(args).forEach((k) => {
+        //to avoid race between setter fn and default values fn
         if (!this[k]) {
           this[k] = args[k];
         }
@@ -89,12 +90,14 @@ export function BaseComponentMixin(base = class {}) {
       //console.log(`constructor of ${is}`, this.el);
     }
 
-    fire(type, detail) {
-      this._wrapper.dispatchEvent(new CustomEvent(type, {
-        bubbles: true,
-        composed: true,
-        detail
-      }))
+    emit(type, detail) {
+      this._wrapper.dispatchEvent(
+        new CustomEvent(type, {
+          bubbles: true,
+          composed: true,
+          detail
+        })
+      );
     }
-  }
+  };
 }
