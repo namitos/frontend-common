@@ -1,4 +1,30 @@
 export function BaseComponentMixin(base = class {}) {
+  function deepSet(obj, path, value, create = true) {
+    let properties = path;
+    if (!(path instanceof Array)) {
+      properties = path.split('.');
+    }
+
+    let currentObject = obj;
+    let property;
+    create = create === undefined ? true : create;
+    while (properties.length) {
+      property = properties.shift();
+      if (!currentObject) {
+        break;
+      }
+      if (!(currentObject[property] instanceof Object) && create) {
+        currentObject[property] = {};
+      }
+      if (!properties.length) {
+        currentObject[property] = value;
+      }
+      currentObject = currentObject[property];
+    }
+
+    return obj;
+  }
+
   return class BaseComponentMixin extends base {
     static get is() {
       return 'div';
@@ -26,6 +52,10 @@ export function BaseComponentMixin(base = class {}) {
 
     constructor(args = {}) {
       super();
+      this.initialize(args);
+    }
+
+    initialize(args) {
       let { is, properties } = this.constructor;
 
       if (this._isWebcomponent) {
@@ -40,7 +70,6 @@ export function BaseComponentMixin(base = class {}) {
         if (prop.hasOwnProperty('value') && !args.hasOwnProperty(propName)) {
           args[propName] = prop.value instanceof Function ? prop.value() : prop.value;
         }
-
         Object.defineProperty(this, propName, {
           get() {
             return this._watchingProperties[propName];
@@ -98,6 +127,10 @@ export function BaseComponentMixin(base = class {}) {
           detail
         })
       );
+    }
+
+    set(path, value) {
+      deepSet(this, path, value);
     }
   };
 }
