@@ -16,8 +16,7 @@
     "url": "https://github.com/namitos/model-components/issues"
   },
   "homepage": "https://github.com/namitos/model-components#readme",
-  "devDependencies": {
+  "dependencies": {
     "lit-html": "^0.13.0"
-  },
-  "dependencies": {}
+  }
 }
