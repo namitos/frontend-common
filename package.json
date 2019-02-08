@@ -1,5 +1,5 @@
 {
-  "name": "model-components",
+  "name": "frontend-common",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/namitos/model-components.git"
+    "url": "git+https://github.com/namitos/frontend-common.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/namitos/model-components/issues"
+    "url": "https://github.com/namitos/frontend-common/issues"
   },
-  "homepage": "https://github.com/namitos/model-components#readme",
+  "homepage": "https://github.com/namitos/frontend-common#readme",
   "dependencies": {
     "lit-html": "^1.0.0"
   }
