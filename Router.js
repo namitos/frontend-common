@@ -165,7 +165,7 @@ export class Router {
   constructor(routes = {}) {
     this.routes = Object.keys(routes).map((key) => {
       return {
-        fn: routes[key],
+        fn: routes[key].bind(this),
         regexp: stringToRegexp(key)
       };
     });
@@ -173,9 +173,9 @@ export class Router {
       this.page(location.pathname);
     });
   }
+
   page(pathname) {
     document.documentElement ? (document.documentElement.scrollTop = 0) : (document.body.scrollTop = 0);
-    //pathname = pathname ? pathname.substr(1) : "";
     let route = this.routes.find((route) => route.regexp.test(pathname));
     let regexp = route.regexp;
     let qsIndex = pathname.indexOf('?');
@@ -186,5 +186,10 @@ export class Router {
       params[key.name] = m[i + 1];
     });
     route.fn(params);
+  }
+
+  navigate(href) {
+    window.history.pushState({}, '', href);
+    this.page(location.pathname);
   }
 }
