@@ -122,7 +122,7 @@ export function initModels({ models = {}, schemas, apiHost }) {
     models.User ||
     class User extends models.Model {
       static get schema() {
-        return schemas.User;
+        return new models.Schema(schemas.User);
       }
       permission(permissionString) {
         return this.permissions.includes(permissionString) || this.permissions.includes('full access');
@@ -159,13 +159,13 @@ export function initModels({ models = {}, schemas, apiHost }) {
       if (schemas[key].tree) {
         models[key] = class extends models.Tree {
           static get schema() {
-            return schemas[key];
+            return new models.Schema(schemas[key]);
           }
         };
       } else {
         models[key] = class extends models.Model {
           static get schema() {
-            return schemas[key];
+            return new models.Schema(schemas[key]);
           }
         };
       }
