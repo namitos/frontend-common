@@ -16,7 +16,5 @@
     "url": "https://github.com/namitos/frontend-common/issues"
   },
   "homepage": "https://github.com/namitos/frontend-common#readme",
-  "dependencies": {
-    "lit-html": "^1.0.0"
-  }
+  "dependencies": {}
 }
